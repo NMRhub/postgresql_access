@@ -15,7 +15,6 @@ object wrapper for psycopg2
 database utility functions / classes
 """
 
-
 class AbstractDatabase(ABC):
     """OO wrapper for psycopg2 and Facade to connect PasswordCache"""
     __DATABASE = 'database'
