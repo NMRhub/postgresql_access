@@ -15,6 +15,7 @@ object wrapper for psycopg2
 database utility functions / classes
 """
 
+
 class AbstractDatabase(ABC):
     """OO wrapper for psycopg2 and Facade to connect PasswordCache"""
     __DATABASE = 'database'
@@ -87,7 +88,7 @@ class AbstractDatabase(ABC):
         if self._sslmode:
             connect_string += f" sslmode='{self._sslmode}'"
         try:
-            conn = psycopg2.connect(connect_string, application_name=appname,**kwargs)
+            conn = psycopg2.connect(connect_string, application_name=appname, **kwargs)
             self.connect_success(dbname, user, password, sch)
         except psycopg2.OperationalError:
             self.connect_fail(dbname, user, password, sch)
@@ -111,8 +112,6 @@ class DatabaseSimple(AbstractDatabase):
         self.port = port
         self.username = user
         self._dbname = database_name
-        self.ctx = None
-        self._pobj = None
 
     def host(self) -> str:
         return self._host
@@ -130,14 +129,14 @@ class DatabaseSimple(AbstractDatabase):
     def service_name(self):
         return f"Database {self.host()}.{self.database_name()}"
 
-    def set_password(self,password) -> None:
+    def set_password(self, password) -> None:
         """"Set password explicitly"""
-        keyring.set_password(self.service_name,self.user(),password)
+        keyring.set_password(self.service_name, self.user(), password)
 
     def password(self) -> str:
         """Get password from keyring or prompt"""
-        if (pw := keyring.get_password(self.service_name,self.user())) is not None:
-             return pw
+        if (pw := keyring.get_password(self.service_name, self.user())) is not None:
+            return pw
         pw = getpass.getpass(f"Enter password for {self.service_name} {self.user()}")
         return pw
 
@@ -164,7 +163,7 @@ class DatabaseDict(DatabaseSimple):
 class DatabaseConfig(DatabaseDict):
 
     def __init__(self, *, config: 'configparser.ConfigParser', section_key: str = 'database',
-                 application_name:str = None):
+                 application_name: str = None):
         config_section = config[section_key]
         super().__init__(dictionary=config_section)
         self.set_app_name(application_name)
@@ -269,6 +268,7 @@ def query_to_object(cursor, query: str) -> list:
     """
     cursor.execute(query)
     return cursor_to_objects(cursor)
+
 
 def cursor_to_objects(cursor) -> list:
     """
