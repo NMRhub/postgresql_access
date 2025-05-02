@@ -1,6 +1,6 @@
 [project]
 name = "postgresql_access"
-version = "1.2"
+version = "1.2.1"
 dependencies = ['psycopg2-binary',
 	'keyring']
 requires-python= ">= 3.8"
@@ -18,3 +18,5 @@ postgresql_access = "postgresql_access.main:main"
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
+[project.optional-dependencies]
+alchemy = ['sqlalchemy']
