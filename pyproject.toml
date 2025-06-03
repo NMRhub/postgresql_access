@@ -1,8 +1,7 @@
 [project]
 name = "postgresql_access"
-version = "1.2.1"
+version = "2.0"
 dependencies = [
-    "psycopg2-binary",
     "keyring"
 ]
 requires-python = ">=3.8"
@@ -19,6 +18,8 @@ dynamic = []
 postgresql_access = "postgresql_access.main:main"
 
 [project.optional-dependencies]
+psycopg2 = ["psycopg2-binary"]
+psycopg3 = ["psycopg[binary]"]
 alchemy = ["sqlalchemy"]
 
 [build-system]
