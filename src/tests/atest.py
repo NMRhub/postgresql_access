@@ -7,7 +7,7 @@ import keyring
 from keyring import backend
 
 from postgresql_access import postgresql_access_logger
-from postgresql_access.database import DatabaseConfig
+from postgresql_access.database import DatabaseConfig, ReadOnlyCursor
 
 
 def main():
@@ -29,6 +29,10 @@ def main():
     db = DatabaseConfig(config=cp)
     c = db.connect(application_name="access test")
     with c.cursor() as cursor:
+        cursor.execute('select now()')
+        print(cursor.fetchone()[0])
+    c.rollback()
+    with ReadOnlyCursor(c)  as cursor:
         cursor.execute('select now()')
         print(cursor.fetchone()[0])
 

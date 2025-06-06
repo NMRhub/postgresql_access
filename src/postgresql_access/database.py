@@ -9,18 +9,19 @@ from typing import Mapping, Any
 
 import keyring
 
+
 # Compatibility layer for psycopg2 and psycopg3
+
 try:
     import psycopg
     psycopg_module = 'psycopg3'
-    connect = psycopg.connect
-    OperationalError = psycopg.OperationalError
+    _IS_3 = True
 except ImportError:
     import psycopg2 as psycopg
     psycopg_module = 'psycopg2'
-    connect = psycopg.connect
-    OperationalError = psycopg.OperationalError
+    _IS_3 = False
 
+connect = psycopg.connect
 
 class AbstractDatabase(ABC):
     __DATABASE = 'database'
@@ -81,7 +82,7 @@ class AbstractDatabase(ABC):
         try:
             conn = connect(**self.build_connection_kwargs(dbname, user, password), **kwargs)
             self.connect_success(dbname, user, password, schema)
-        except OperationalError:
+        except psycopg.OperationalError:
             self.connect_fail(dbname, user, password, schema)
             raise
 
@@ -160,16 +161,34 @@ class ReadOnlyCursor:
         self._conn = conn
         self._factory = cursor_factory
 
-    def __enter__(self):
-        self.existing_readonly = self._conn.readonly
-        self._conn.readonly = True
-        self._curs = self._conn.cursor(cursor_factory=self._factory)
-        return self._curs
+    if _IS_3:
+        def __enter__(self):
+            self.existing_readonly = self._conn.read_only
+            self._conn.read_only = True
+            if self._factory:
+                self._curs = self._conn.cursor(row_factory=self._factory)
+            else:
+                self._curs = self._conn.cursor()
+            return self._curs
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self._curs.close()
-        self._conn.rollback()
-        self._conn.readonly = self.existing_readonly
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            self._curs.close()
+            self._conn.rollback()
+            self._conn.read_only = self.existing_readonly
+    else:
+        def __enter__(self):
+            self.existing_readonly = self._conn.readonly
+            self._conn.readonly = True
+            if self._factory:
+                self._curs = self._conn.cursor(cursor_factory=self._factory)
+            else:
+                self._curs = self._conn.cursor()
+            return self._curs
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            self._curs.close()
+            self._conn.rollback()
+            self._conn.readonly = self.existing_readonly
 
     @property
     def connection(self): return self._conn
@@ -234,3 +253,4 @@ def row_estimate(connection, table: str) -> int:
         row = curs.fetchone()
         return int(row[0])
 
+del _IS_3
