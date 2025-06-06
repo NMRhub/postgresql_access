@@ -6,12 +6,9 @@ import os
 import pwd
 from abc import ABC, abstractmethod
 from typing import Mapping, Any
-
 import keyring
 
-
 # Compatibility layer for psycopg2 and psycopg3
-
 try:
     import psycopg
     psycopg_module = 'psycopg3'
@@ -22,6 +19,7 @@ except ImportError:
     _IS_3 = False
 
 connect = psycopg.connect
+OperationalError = psycopg.OperationalError
 
 class AbstractDatabase(ABC):
     __DATABASE = 'database'
@@ -82,7 +80,7 @@ class AbstractDatabase(ABC):
         try:
             conn = connect(**self.build_connection_kwargs(dbname, user, password), **kwargs)
             self.connect_success(dbname, user, password, schema)
-        except psycopg.OperationalError:
+        except OperationalError:
             self.connect_fail(dbname, user, password, schema)
             raise
 
@@ -200,7 +198,13 @@ class NewTransactionCursor:
 
     def __enter__(self):
         self._conn.rollback()
-        return self._conn.cursor(cursor_factory=self._factory)
+        if _IS_3:
+            if self._factory:
+                return self._conn.cursor(row_factory=self._factory)
+            else:
+                return self._conn.cursor()
+        else:
+            return self._conn.cursor(cursor_factory=self._factory)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         if exc_type is not None:
@@ -254,3 +258,4 @@ def row_estimate(connection, table: str) -> int:
         return int(row[0])
 
 del _IS_3
+
