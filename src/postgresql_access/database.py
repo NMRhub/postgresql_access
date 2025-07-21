@@ -196,14 +196,16 @@ class NewTransactionCursor:
         self._conn = conn
         self._factory = cursor_factory
 
-    def __enter__(self):
-        self._conn.rollback()
-        if _IS_3:
+    if _IS_3:
+        def __enter__(self):
+            self._conn.rollback()
             if self._factory:
                 return self._conn.cursor(row_factory=self._factory)
             else:
                 return self._conn.cursor()
-        else:
+    else:
+        def __enter__(self):
+            self._conn.rollback()
             return self._conn.cursor(cursor_factory=self._factory)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
