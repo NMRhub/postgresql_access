@@ -14,9 +14,12 @@ try:
     psycopg_module = 'psycopg3'
     _IS_3 = True
 except ImportError:
-    import psycopg2 as psycopg
-    psycopg_module = 'psycopg2'
-    _IS_3 = False
+    try:
+        import psycopg2 as psycopg
+        psycopg_module = 'psycopg2'
+        _IS_3 = False
+    except ImportError:
+        raise ImportError("Either psycopg2 or psycopg3 must be present in environment")
 
 connect = psycopg.connect
 OperationalError = psycopg.OperationalError
