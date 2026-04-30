@@ -76,6 +76,7 @@ class AbstractDatabase(ABC):
         dbname = database_name or self.database_name()
         user = self.user()
         password = self.password()
+        sch = schema is schema is not None or self.schema
 
         try:
             conn = connect(**self.build_connection_kwargs(dbname, user, password), **kwargs)
@@ -84,9 +85,9 @@ class AbstractDatabase(ABC):
             self.connect_fail(dbname, user, password, schema)
             raise
 
-        if schema:
+        if sch is not None:
             with conn.cursor() as cursor:
-                cursor.execute(f"SET search_path TO {schema}")
+                cursor.execute(f"SET search_path TO {sch}")
             conn.commit()
 
         return conn
